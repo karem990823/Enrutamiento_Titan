@@ -1,5 +1,5 @@
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Path, Query
 from typing import List, Optional
 from datetime import date
 
@@ -33,118 +33,77 @@ db_certificados = [{"id_certificado": i, "codigo": f"CERT-{i}", "id_usuario": i,
 db_accidentes = [{"id_accidente": i, "id_trabajador": i, "fecha": date.today(), "descripcion": "Incidente menor"} for i in range(1, 6)]
 db_alertas = [{"id_alerta": i, "id_usuario": i, "estado": "pendiente"} for i in range(1, 6)]
 
-# --- RUTAS CRUD (USUARIOS) ---
 @app.get("/usuarios")
-def listar_usuarios():
-    return db_usuarios
+def listar_usuarios(
+    tipo: Optional[str] = Query(None, description="Filtrar por tipo de registro"),
+    nombre_search: Optional[str] = Query(None, min_length=3)
+):
+    """Obtiene la lista de usuarios. Permite filtrar por tipo y buscar por nombre."""
+    resultado = db_usuarios
+    if tipo:
+        resultado = [u for u in resultado if u["tipo_registro"] == tipo]
+    if nombre_search:
+        resultado = [u for u in resultado if nombre_search.lower() in u["nombre"].lower()]
+    return resultado
+
+
+@app.get("/usuarios/{id_usuario}/{correo_verif}")
+def buscar_usuario_especifico(
+    id_usuario: int = Path(..., gt=0),
+    correo_verif: str = Path(...)
+):
+    """Busca un usuario por su ID y verifica si su correo coincide."""
+    for u in db_usuarios:
+        if u["id_usuario"] == id_usuario and u["correo"] == correo_verif:
+            return u
+    raise HTTPException(status_code=404, detail="Usuario no encontrado o correo no coincide")
+
+
+@app.get("/cursos")
+def filtrar_cursos(
+    min_h: int = Query(0, ge=0),
+    max_h: int = Query(200, le=200)
+):
+    """Lista cursos filtrando por un rango de intensidad horaria."""
+    return [c for c in db_cursos if min_h <= c["intensidad_horaria"] <= max_h]
+
+@app.get("/cursos/{id_curso}/{nombre_slug}")
+def detalle_curso(
+    id_curso: int = Path(..., ge=1),
+    nombre_slug: str = Path(...)
+):
+    """Obtiene detalles de un curso usando su ID y un nombre simplificado (slug)."""
+    for c in db_cursos:
+        if c["id_curso"] == id_curso:
+            return c
+    raise HTTPException(status_code=404, detail="Curso no encontrado")
+
+
+
+@app.put("/alertas/{id_alerta}")
+def modificar_alerta(
+    id_alerta: int = Path(..., title="ID de la alerta"),
+    nuevo_estado: str = Query(..., regex="^(pendiente|enviada|vencida)$")
+):
+    """Actualiza el estado de una alerta mediante su ID y un estado válido por query."""
+    for al in db_alertas:
+        if al["id_alerta"] == id_alerta:
+            al["estado"] = nuevo_estado
+            return {"mensaje": "Alerta actualizada", "alerta": al}
+    raise HTTPException(status_code=404, detail="Alerta no encontrada")
+
 
 @app.post("/usuarios")
-def crear_usuario(usuario):
+def crear_usuario(usuario: Usuario):
+    """Registra un nuevo usuario validando los campos del modelo."""
     db_usuarios.append(usuario.dict())
     return {"mensaje": "Usuario registrado", "usuario": usuario}
 
-@app.put("/usuarios/{id_usuario}")
-def actualizar_usuario(id_usuario: int, usuario_upd):
-    for index, u in enumerate(db_usuarios):
-        if u["id_usuario"] == id_usuario:
-            db_usuarios[index] = usuario_upd.dict()
-            return {"mensaje": "Usuario actualizado"}
-    raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
 @app.delete("/usuarios/{id_usuario}")
-def eliminar_usuario(id_usuario: int):
+def eliminar_usuario(id_usuario: int = Path(..., gt=0)):
+    """Elimina un usuario por su ID dinámico."""
     for index, u in enumerate(db_usuarios):
         if u["id_usuario"] == id_usuario:
             db_usuarios.pop(index)
             return {"mensaje": "Usuario eliminado"}
     raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-# --- RUTAS CRUD (CURSOS) ---
-@app.get("/cursos")
-def listar_cursos():
-    return db_cursos
-
-@app.post("/cursos")
-def crear_curso(curso):
-    db_cursos.append(curso.dict())
-    return {"mensaje": "Curso registrado"}
-
-@app.put("/cursos/{id_curso}")
-def actualizar_curso(id_curso: int, curso_upd):
-    for index, c in enumerate(db_cursos):
-        if c["id_curso"] == id_curso:
-            db_cursos[index] = curso_upd.dict()
-            return {"mensaje": "Curso actualizado"}
-    raise HTTPException(status_code=404, detail="Curso no encontrado")
-
-@app.delete("/cursos/{id_curso}")
-def eliminar_curso(id_curso: int):
-    for index, c in enumerate(db_cursos):
-        if c["id_curso"] == id_curso:
-            db_cursos.pop(index)
-            return {"mensaje": "Curso eliminado"}
-    raise HTTPException(status_code=404, detail="Curso no encontrado")
-
-# --- RUTAS CRUD (FACTURAS) ---
-@app.get("/facturas")
-def listar_facturas():
-    return db_facturas
-
-@app.post("/facturas")
-def crear_factura(factura):
-    db_facturas.append(factura.dict())
-    return {"mensaje": "Factura registrada"}
-
-# --- RUTAS CRUD (PAGOS) ---
-@app.get("/pagos")
-def listar_pagos():
-    return db_pagos
-
-@app.post("/pagos")
-def crear_pago(pago):
-    db_pagos.append(pago.dict())
-    return {"mensaje": "Pago registrado"}
-
-# --- RUTAS CRUD (CERTIFICADOS) ---
-@app.get("/certificados")
-def listar_certificados():
-    return db_certificados
-
-@app.post("/certificados")
-def crear_certificado(cert):
-    db_certificados.append(cert.dict())
-    return {"mensaje": "Certificado registrado"}
-
-# --- RUTAS CRUD (ACCIDENTES) ---
-@app.get("/accidentes")
-def listar_accidentes():
-    return db_accidentes
-
-@app.put("/accidentes/{id_accidente}")
-def actualizar_accidente(id_accidente: int, acc_upd):
-    for index, a in enumerate(db_accidentes):
-        if a["id_accidente"] == id_accidente:
-            db_accidentes[index] = acc_upd.dict()
-            return {"mensaje": "Reporte de accidente actualizado"}
-    raise HTTPException(status_code=404, detail="Accidente no encontrado")
-
-# --- RUTAS CRUD (ALERTAS) ---
-@app.get("/alertas")
-def listar_alertas():
-    return db_alertas
-
-@app.put("/alertas/{id_alerta}")
-def actualizar_alerta(id_alerta: int, alerta_upd):
-    for index, al in enumerate(db_alertas):
-        if al["id_alerta"] == id_alerta:
-            db_alertas[index] = alerta_upd.dict()
-            return {"mensaje": "Alerta actualizada"}
-    raise HTTPException(status_code=404, detail="Alerta no encontrada")
-
-@app.delete("/alertas/{id_alerta}")
-def eliminar_alerta(id_alerta: int):
-    for index, al in enumerate(db_alertas):
-        if al["id_alerta"] == id_alerta:
-            db_alertas.pop(index)
-            return {"mensaje": "Alerta eliminada"}
-    raise HTTPException(status_code=404, detail="Alerta no encontrada")
