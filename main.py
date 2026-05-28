@@ -3,41 +3,6 @@ from fastapi import FastAPI, HTTPException
 from typing import List, Optional
 from datetime import date
 
-class Usuario(BaseModel):
-    id_usuario: int
-    nombre: str
-    apellido: str
-    tipo_registro: str
-    numero_identificacion: int = Field(gt=0, description="La identificación debe ser mayor a 0")
-    correo: str
-    
-class Curso(BaseModel):
-    id_curso: int
-    nombre_curso: str
-    intensidad_horaria: int = Field(
-        gt=0,
-        description="La intensidad horaria debe ser mayor a 0"
-    )
-
-class Factura(BaseModel):
-    id_factura: int
-    id_empresa: int
-    fecha: date
-    total: float = Field(
-        gt=0,
-        description="El total debe ser mayor a 0"
-    )
-
-class Pago(BaseModel):
-    id_pago: int
-    id_factura: int
-    monto: float = Field(
-        gt=0,
-        description="El monto debe ser mayor a 0"
-    )
-    metodo: str
-
-
 app = FastAPI()
 db_usuarios = [
     {"id_usuario": 1, "nombre": "Karem", "apellido": "Barandica", "tipo_registro": "usuario", "numero_identificacion": 123, "correo": "karem@mail.com"},
