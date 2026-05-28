@@ -3,6 +3,132 @@ from fastapi import FastAPI, HTTPException, Path, Query
 from typing import List, Optional
 from datetime import date
 
+class Cliente(BaseModel):
+    id: int = Field(
+        gt=0,
+        description="ID mayor a 0"
+    )
+
+    nombre: str = Field(
+        min_length=3,
+        max_length=50,
+        description="Mínimo 3 caracteres"
+    )
+
+    email: EmailStr = Field(
+        description="Correo electrónico válido"
+    )
+
+    telefono: str = Field(
+        min_length=7,
+        max_length=15,
+        pattern=r'^\+?[0-9]+$',
+        description="Teléfono entre 7-15 dígitos"
+    )
+
+    edad: int = Field(
+        gt=0,
+        lt=120,
+        description="Edad entre 1 y 119 años"
+    )
+
+
+
+
+class Producto(BaseModel):
+    id: int = Field(
+        gt=0,
+        description="ID mayor a 0"
+    )
+
+    nombre: str = Field(
+        min_length=3,
+        max_length=100,
+        description="Mínimo 3 caracteres"
+    )
+
+    precio: float = Field(
+        gt=0,
+        description="Precio mayor a 0"
+    )
+
+    stock: int = Field(
+        ge=0,
+        description="Stock mayor o igual a 0"
+    )
+
+    categoria: str = Field(
+        min_length=3,
+        max_length=50,
+        description="Mínimo 3 caracteres"
+    )
+
+class Empleado(BaseModel):
+    id: int = Field(
+        gt=0,
+        description="ID mayor a 0"
+    )
+
+    nombre: str = Field(
+        min_length=3,
+        max_length=50,
+        description="Mínimo 3 caracteres"
+    )
+
+    email: EmailStr = Field(
+        description="Correo electrónico válido"
+    )
+
+    cargo: str = Field(
+        min_length=3,
+        max_length=50,
+        description="Mínimo 3 caracteres"
+    )
+
+    salario: float = Field(
+        gt=0,
+        description="Salario mayor a 0"
+    )
+
+    fecha_contratacion: date = Field(
+        description="Fecha en formato YYYY-MM-DD"
+    )
+
+class Proveedor(BaseModel):
+    id: int = Field(
+        gt=0,
+        description="ID mayor a 0"
+    )
+
+    nombre: str = Field(
+        min_length=3,
+        max_length=100,
+        description="Mínimo 3 caracteres"
+    )
+
+    ruc: str = Field(
+        min_length=8,
+        max_length=11,
+        pattern=r'^[0-9]+$',
+        description="RUC entre 8-11 dígitos"
+    )
+
+    telefono: str = Field(
+        min_length=7,
+        max_length=15,
+        pattern=r'^\+?[0-9]+$',
+        description="Teléfono entre 7-15 dígitos"
+    )
+
+    direccion: str = Field(
+        min_length=5,
+        max_length=150,
+        description="Mínimo 5 caracteres"
+    )
+
+    email: EmailStr = Field(
+        description="Correo electrónico válido"
+    )
 app = FastAPI()
 db_usuarios = [
     {"id_usuario": 1, "nombre": "Karem", "apellido": "Barandica", "tipo_registro": "usuario", "numero_identificacion": 123, "correo": "karem@mail.com"},
