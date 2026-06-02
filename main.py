@@ -60,7 +60,7 @@ class Producto(BaseModel):
     categoria: str = Field(
         min_length=3,
         max_length=50,
-        description="Mínimo 3 caracteres"
+        description="Mínimo 3 caracteres"    
     )
 
 class Empleado(BaseModel):
